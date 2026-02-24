@@ -2,9 +2,24 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const generateToken = (userId) => {
+const generateAccessToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: '15m'
+  });
+};
+
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET, {
     expiresIn: '7d'
+  });
+};
+
+const setRefreshTokenCookie = (res, token) => {
+  res.cookie('refreshToken', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 };
 
@@ -36,13 +51,16 @@ const register = async (req, res) => {
       password: hashedPassword
     });
 
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    setRefreshTokenCookie(res, refreshToken);
 
     return res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        token,
+        token: accessToken,
         user: {
           _id: user._id,
           name: user.name,
@@ -88,13 +106,16 @@ const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    setRefreshTokenCookie(res, refreshToken);
 
     return res.status(200).json({
       success: true,
       message: 'Logged in successfully',
       data: {
-        token,
+        token: accessToken,
         user: {
           _id: user._id,
           name: user.name,
@@ -111,8 +132,49 @@ const login = async (req, res) => {
   }
 };
 
+const refresh = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'Refresh token missing' });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+
+    return res.status(200).json({
+      success: true,
+      data: { token: accessToken }
+    });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+  }
+};
+
+const logout = async (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+};
+
 module.exports = {
   register,
-  login
+  login,
+  refresh,
+  logout
 };
 

@@ -9,10 +9,10 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('token') || null);
+  const [token, setToken] = useState(() => sessionStorage.getItem('token') || null);
   const [loading, setLoading] = useState(false);
 
   const isAuthenticated = !!token;
@@ -20,15 +20,15 @@ export const AuthProvider = ({ children }) => {
   const saveAuthData = (authToken, authUser) => {
     setToken(authToken);
     setUser(authUser);
-    localStorage.setItem('token', authToken);
-    localStorage.setItem('user', JSON.stringify(authUser));
+    sessionStorage.setItem('token', authToken);
+    sessionStorage.setItem('user', JSON.stringify(authUser));
   };
 
   const clearAuthData = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
   };
 
   const login = async (email, password) => {
@@ -73,10 +73,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    clearAuthData();
-    toast.success('Logged out successfully');
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      clearAuthData();
+      toast.success('Logged out successfully');
+      navigate('/login');
+    }
   };
 
   useEffect(() => {
