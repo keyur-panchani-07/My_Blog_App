@@ -4,10 +4,14 @@ export const blogApi = createApi({
   reducerPath: 'blogApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
-    prepareHeaders: (headers) => {
-      // Logic for adding auth token if stored in local storage instead of cookies
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as any).auth.token;
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`);
+      }
       return headers;
     },
+    credentials: 'include', // Support both cookies and Bearer tokens
   }),
   tagTypes: ['Blog', 'Category'],
   endpoints: (builder) => ({

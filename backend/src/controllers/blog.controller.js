@@ -26,7 +26,11 @@ const getBlogById = asyncHandler(async (req, res) => {
  * @desc Create blog
  */
 const createBlog = asyncHandler(async (req, res) => {
-    const blog = await blogService.createBlog(req.body, req.user._id);
+    const blogData = { ...req.body };
+    if (req.file) {
+        blogData.image = req.file.path;
+    }
+    const blog = await blogService.createBlog(blogData, req.user._id);
     return res.status(201).json(
         new ApiResponse(201, blog, "Blog created successfully")
     );
@@ -36,7 +40,11 @@ const createBlog = asyncHandler(async (req, res) => {
  * @desc Update blog
  */
 const updateBlog = asyncHandler(async (req, res) => {
-    const blog = await blogService.updateBlog(req.params.id, req.body, req.user._id);
+    const updateData = { ...req.body };
+    if (req.file) {
+        updateData.image = req.file.path;
+    }
+    const blog = await blogService.updateBlog(req.params.id, updateData, req.user._id);
     return res.status(200).json(
         new ApiResponse(200, blog, "Blog updated successfully")
     );
