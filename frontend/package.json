@@ -8,12 +8,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "@types/node": "^25.3.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "axios": "^1.7.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-hot-toast": "^2.4.1",
     "react-quill": "^2.0.0",
-    "react-router-dom": "^6.23.0"
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^6.23.0",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react-swc": "^3.7.0",

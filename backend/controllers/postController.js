@@ -1,6 +1,13 @@
 const Post = require('../models/Post');
 const User = require('../models/User');
 
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const baseUrl = process.env.SERVER_PUBLIC_URL || 'http://localhost:5000';
+  return `${baseUrl.replace(/\/$/, '')}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+};
+
 const createPost = async (req, res) => {
   try {
     const { title, content } = req.body;
@@ -27,11 +34,13 @@ const createPost = async (req, res) => {
     });
 
     const populatedPost = await post.populate('author', 'name email');
+    const postObj = populatedPost.toObject();
+    postObj.image = getFullImageUrl(postObj.image);
 
     return res.status(201).json({
       success: true,
       message: 'Post created successfully',
-      data: populatedPost
+      data: postObj
     });
   } catch (error) {
     console.error('Create post error:', error);
@@ -71,11 +80,17 @@ const getPosts = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    const postsWithFullImage = posts.map(post => {
+      const p = post.toObject();
+      p.image = getFullImageUrl(p.image);
+      return p;
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Posts fetched successfully',
       data: {
-        posts,
+        posts: postsWithFullImage,
         pagination: {
           totalPosts,
           totalPages,
@@ -106,10 +121,13 @@ const getPostById = async (req, res) => {
       });
     }
 
+    const postObj = post.toObject();
+    postObj.image = getFullImageUrl(postObj.image);
+
     return res.status(200).json({
       success: true,
       message: 'Post fetched successfully',
-      data: post
+      data: postObj
     });
   } catch (error) {
     console.error('Get post by ID error:', error);
@@ -152,11 +170,13 @@ const updatePost = async (req, res) => {
 
     const updatedPost = await post.save();
     const populatedPost = await updatedPost.populate('author', 'name email');
+    const postObj = populatedPost.toObject();
+    postObj.image = getFullImageUrl(postObj.image);
 
     return res.status(200).json({
       success: true,
       message: 'Post updated successfully',
-      data: populatedPost
+      data: postObj
     });
   } catch (error) {
     console.error('Update post error:', error);

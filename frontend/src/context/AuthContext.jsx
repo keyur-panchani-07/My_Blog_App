@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 const AuthContext = createContext(null);
-
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
